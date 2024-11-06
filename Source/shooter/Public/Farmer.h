@@ -11,6 +11,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/kismetSystemLibrary.h"
+#include "Blueprint/UserWidget.h"
+#include "Projectile.h"
+#include  "kismet/GameplayStatics.h"
+
 #include "Farmer.generated.h"
 
 UCLASS()
@@ -31,8 +35,21 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int tumama;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="PlayerStats")
+	int life;
+
+	UPROPERTY(EditAnywhere, Category = "PlayerUI")
+	TSubclassOf<UUserWidget> playerWidgetView;
+	UUserWidget* currentWidget;
+
 	void MoveRight(float Axis);
 	void MoveFoward(float Axis);
+
+	UFUNCTION()
+	void OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimitiveComponent* otherComp, int32 otherIndex, bool bFromsweep, const FHitResult& resutl);
+
+	UPROPERTY(EditAnywhere)
+	FVector pos;
 
 protected:
 	// Called when the game starts or when spawned
@@ -44,5 +61,10 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> bulletClone;
+
+	void ShootBullet();
 
 };

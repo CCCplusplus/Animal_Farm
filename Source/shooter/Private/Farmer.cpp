@@ -35,6 +35,8 @@ AFarmer::AFarmer()
 	camera->SetupAttachment(cameraBoom, USpringArmComponent::SocketName);
 	camera->bUsePawnControlRotation = false;
 
+	life = 50;
+
 }
 
 void AFarmer::MoveRight(float Axis)
@@ -53,11 +55,26 @@ void AFarmer::MoveFoward(float Axis)
 	AddMovementInput(Direction, Axis);
 }
 
+void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimitiveComponent* otherComp, int32 otherIndex, bool bFromsweep, const FHitResult& resutl)
+{
+	if (other->ActorHasTag("obj")) {
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "GetObj");
+		life += 25;
+	}
+	
+
+}
+
 // Called when the game starts or when spawned
 void AFarmer::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddUniqueDynamic(this, &AFarmer::OnBeingOverLap);
+
+	if (playerWidgetView != nullptr) {
+		currentWidget = CreateWidget(GetWorld(), playerWidgetView);
+		currentWidget->AddToViewport();
+	}
 }
 
 // Called every frame
@@ -80,5 +97,14 @@ void AFarmer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	PlayerInputComponent->BindAction("Shooting", IE_Pressed, this, &AFarmer::ShootBullet);
+
+}
+
+void AFarmer::ShootBullet()
+{
+	//UGameplayStatics::OpenLevel(this, FName(*GetWorld()->GetName(), false));
+	
+	GetWorld()->SpawnActor<AProjectile>(bulletClone, pos, GetActorRotation());
 }
 
