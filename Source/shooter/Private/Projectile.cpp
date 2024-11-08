@@ -13,8 +13,8 @@ AProjectile::AProjectile()
 	RootComponent = mesh;
 
 	projectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("movement"));
-	projectile->InitialSpeed = 5000;
-	projectile->MaxSpeed = 10000;
+	projectile->InitialSpeed = 11000;
+	projectile->MaxSpeed = 22000;
 
 	projectile->OnProjectileStop.AddDynamic(this, &AProjectile::OnHit);
 
