@@ -13,8 +13,8 @@ AProjectile::AProjectile()
 	RootComponent = mesh;
 
 	projectile = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("movement"));
-	projectile->InitialSpeed = 1000;
-	projectile->MaxSpeed = 2000;
+	projectile->InitialSpeed = 5000;
+	projectile->MaxSpeed = 10000;
 
 	projectile->OnProjectileStop.AddDynamic(this, &AProjectile::OnHit);
 
@@ -23,7 +23,6 @@ AProjectile::AProjectile()
 void AProjectile::OnHit(const FHitResult& hi)
 {
 	this->Destroy();
-	GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "Bang");
 }
 
 // Called when the game starts or when spawned

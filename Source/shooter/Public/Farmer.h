@@ -35,15 +35,39 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	int tumama;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="PlayerStats")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
 	int life;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
+	int grandes;
 
 	UPROPERTY(EditAnywhere, Category = "PlayerUI")
 	TSubclassOf<UUserWidget> playerWidgetView;
 	UUserWidget* currentWidget;
 
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> CrosshairWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* CrosshairWidget;
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	TSubclassOf<UUserWidget> SniperScopeWidgetClass;
+
+	UUserWidget* SniperScopeWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerStats")
+	bool bIsAiming;
+
+	float OriginalWalkSpeed;
+
 	void MoveRight(float Axis);
 	void MoveFoward(float Axis);
+
+	void CycleWeapons();
+
+	void HandleMouseWheel(float AxisValue);
+
 
 	UFUNCTION()
 	void OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimitiveComponent* otherComp, int32 otherIndex, bool bFromsweep, const FHitResult& resutl);
@@ -55,7 +79,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -65,6 +89,36 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AProjectile> bulletClone;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> grandeClone;
+
+	UPROPERTY()
+	AActor* rapidFireGunActor;
+
+	UPROPERTY()
+	AActor* sniper;
+
+
+	bool hasSniper;
+
+	bool hasGun;
+
+	bool hasKnife;
+
+	bool sniperSelected;
+	bool gunSelected;
+	bool knifeSelected;
+
 	void ShootBullet();
+
+	void ShootRayTrace();
+
+	void ThrowGranade();
+
+	void FireWeapon();
+
+	void StartAiming();
+
+	void StopAiming();
 
 };

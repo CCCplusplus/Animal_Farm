@@ -16,6 +16,9 @@ public:
 	// Sets default values for this pawn's properties
 	ARapid_Fire_Gun();
 
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* mesh;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
