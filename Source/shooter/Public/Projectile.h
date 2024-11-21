@@ -23,7 +23,7 @@ public:
 	class UProjectileMovementComponent* projectile;
 
 	UFUNCTION()
-	void OnHit(const FHitResult& hi);
+	virtual void OnHit(const FHitResult& hi);
 
 protected:
 	// Called when the game starts or when spawned

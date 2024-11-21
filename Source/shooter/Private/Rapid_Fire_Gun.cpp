@@ -26,18 +26,18 @@ void ARapid_Fire_Gun::Tick(float DeltaTime)
 	FHitResult hit;
 	FCollisionQueryParams params;
 
-	if (GetWorld()->LineTraceSingleByChannel(hit, GetTransform().GetLocation(), GetActorForwardVector() * 500, ECC_Visibility, params))
-	{
-		UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetTransform().GetLocation(), GetActorForwardVector() * 500, FColor::Green);
-		UKismetSystemLibrary::DrawDebugSphere(GetWorld(), hit.Location, 20, 20, FColor::Green);
+	//if (GetWorld()->LineTraceSingleByChannel(hit, GetTransform().GetLocation(), GetActorForwardVector() * 500, ECC_Visibility, params))
+	//{
+	//	UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetTransform().GetLocation(), GetActorForwardVector() * 500, FColor::Green);
+	//	UKismetSystemLibrary::DrawDebugSphere(GetWorld(), hit.Location, 20, 20, FColor::Green);
 
-		//GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, hit.ToString());
-	}
-	else
-	{
-		UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetTransform().GetLocation(), GetActorForwardVector() * 500, FColor::Red);
-		UKismetSystemLibrary::DrawDebugSphere(GetWorld(), hit.Location, 20, 20, FColor::Red);
-	}
+	//	//GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, hit.ToString());
+	//}
+	//else
+	//{
+	//	UKismetSystemLibrary::DrawDebugLine(GetWorld(), GetTransform().GetLocation(), GetActorForwardVector() * 500, FColor::Red);
+	//	UKismetSystemLibrary::DrawDebugSphere(GetWorld(), hit.Location, 20, 20, FColor::Red);
+	//}
 
 }
 

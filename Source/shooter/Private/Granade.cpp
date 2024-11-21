@@ -5,8 +5,8 @@
 
 AGranade::AGranade() 
 {
-	projectile->InitialSpeed = 3000;
-	projectile->MaxSpeed = 6000;
+	projectile->InitialSpeed = 1000;
+	projectile->MaxSpeed = 2000;
 
 
 	projectile->OnProjectileStop.AddDynamic(this, &AGranade::OnHit);

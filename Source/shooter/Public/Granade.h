@@ -16,5 +16,5 @@ class SHOOTER_API AGranade : public AProjectile
 	
 	AGranade();
 
-	void OnHit(const FHitResult& hi);
+	void OnHit(const FHitResult& hi) override;
 };

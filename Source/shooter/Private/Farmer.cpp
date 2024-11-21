@@ -9,6 +9,10 @@ AFarmer::AFarmer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	normalSpeed = 500.0f;
+	sprintSpeed = 750.0f;
+	slideSpeed = 900.0f;
+
 	GetCapsuleComponent()->InitCapsuleSize(40, 96);
 
 	bUseControllerRotationPitch = false;
@@ -37,8 +41,12 @@ AFarmer::AFarmer()
 	camera->SetupAttachment(cameraBoom, USpringArmComponent::SocketName);
 	camera->bUsePawnControlRotation = false;
 
-	life = 50;
+	maxLife = 100;
+	life = maxLife;
 	grandes = 3;
+	ammo = 0;
+	maxStamina = 100;
+	stamina = maxStamina;
 	hasSniper = false;
 	hasGun = false;
 	hasKnife = false;
@@ -48,6 +56,11 @@ AFarmer::AFarmer()
 	knifeSelected = false;
 
 	bIsAiming = false;
+
+	isSprinting = false;
+	isSliding = false;
+
+	SCanShoot = false;
 }
 
 void AFarmer::MoveRight(float Axis)
@@ -122,8 +135,12 @@ void AFarmer::HandleMouseWheel(float AxisValue)
 void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimitiveComponent* otherComp, int32 otherIndex, bool bFromsweep, const FHitResult& resutl)
 {
 	if (other->ActorHasTag("obj")) {
-		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "GetObj");
-		life += 25;
+		if (life < maxLife) 
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "GetObj");
+			life += 25;
+			other->Destroy();
+		}
 	}
 	
 	if (other->ActorHasTag("rapid_fire_gun") && !hasGun)
@@ -131,7 +148,7 @@ void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimi
 		hasGun = true;
 		rapidFireGunActor = other;
 		other->SetActorEnableCollision(false);
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("Rapid Fire Gun Collected!"));
+		ammo = 12;
 		sniperSelected = false;
 		knifeSelected = false;
 		gunSelected = true;
@@ -142,14 +159,13 @@ void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimi
 		hasSniper = true;
 		sniper = other;
 		other->SetActorEnableCollision(false);
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("sniper Collected!"));
+		SCanShoot = true;
 		gunSelected = false;
 		knifeSelected = false;
 		sniperSelected = true;
 	}
 }
 
-// Called when the game starts or when spawned
 void AFarmer::BeginPlay()
 {
 	Super::BeginPlay();
@@ -164,9 +180,7 @@ void AFarmer::BeginPlay()
 	{
 		CrosshairWidget = CreateWidget<UUserWidget>(GetWorld(), CrosshairWidgetClass);
 		if (CrosshairWidget)
-		{
 			CrosshairWidget->AddToViewport();
-		}
 	}
 
 }
@@ -193,6 +207,27 @@ void AFarmer::Tick(float DeltaTime)
 			sniper->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("spine_03Socket"));
 	}
 
+	if (isSprinting)
+	{
+		if (stamina > 0)
+		{
+			stamina -= DeltaTime * 20;
+			if (stamina <= 0)
+			{
+				stamina = 0;
+				Walk();
+			}
+		}
+	}
+	else if (stamina < maxStamina)
+	{
+		stamina += DeltaTime * 10;
+		if (stamina > maxStamina)
+			stamina = maxStamina;
+	}
+
+	if (life > maxLife)
+		life = maxLife;
 }
 
 // Called to bind functionality to input
@@ -218,25 +253,48 @@ void AFarmer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AFarmer::StopAiming);
 
 	PlayerInputComponent->BindAction("CycleWeapon", IE_Pressed, this, &AFarmer::CycleWeapons);
+
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AFarmer::Sprint);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AFarmer::Walk);
+
+	PlayerInputComponent->BindAction("Slide", IE_Pressed, this, &AFarmer::Slide);
 }
 
 void AFarmer::ShootBullet()
 {
-	if (!hasSniper) return;
+	if (!SCanShoot || !hasSniper) return;
+
+	if (sniperSound)
+		UGameplayStatics::PlaySoundAtLocation(this, sniperSound, GetActorLocation());
+
 
 	if (bulletClone)
 	{
 		FVector StartLocation = camera->GetComponentLocation();
 		FRotator AimDirection = camera->GetComponentRotation();
-		FVector MuzzleLocation = StartLocation + AimDirection.Vector() * 100.0f; // Ajuste para que salga delante de la cámara
+		FVector MuzzleLocation = StartLocation + AimDirection.Vector() * 100.0f;
 
 		GetWorld()->SpawnActor<AProjectile>(bulletClone, MuzzleLocation, AimDirection);
 	}
+
+	SCanShoot = false;
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_ShootCooldown, this, &AFarmer::SReload, 1.0f, false);
 }
 
 void AFarmer::ShootRayTrace()
 {
-	if (!hasGun) return;
+	if (!hasGun || ammo <= 0) return;
+
+	if(quickFireSound)
+		UGameplayStatics::PlaySoundAtLocation(this, quickFireSound, GetActorLocation());
+
+	ammo--;
+
+	if (ammo == 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle_RayCooldown, this, &AFarmer::QReload, 2.0f, false);
+	}
 
 	FVector Start = camera->GetComponentLocation();
 	FVector ForwardVector = camera->GetForwardVector();
@@ -247,9 +305,8 @@ void AFarmer::ShootRayTrace()
 
 	FHitResult HitResult;
 	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this); // Ignorar al propio personaje
+	Params.AddIgnoredActor(this);
 
-	// Realiza el raycast
 	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
 
 
@@ -259,13 +316,9 @@ void AFarmer::ShootRayTrace()
 	DrawDebugLine(GetWorld(), Start, End, LineColor, false, 2.0f, 0, 1.0f);
 
 	if (bHit)
-	{
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.0f, 12, FColor::Green, false, 2.0f);
-	}
 	else
-	{
 		DrawDebugSphere(GetWorld(), End, 10.0f, 12, FColor::Red, false, 2.0f);
-	}
 }
 
 void AFarmer::ThrowGranade()
@@ -286,7 +339,6 @@ void AFarmer::ThrowGranade()
 
 void AFarmer::FireWeapon()
 {
-	// Verificar cuál arma está seleccionada y disparar en consecuencia
 	if (sniperSelected && hasSniper)
 		ShootBullet();
 	else if (gunSelected && hasGun)
@@ -302,35 +354,25 @@ void AFarmer::StartAiming()
 	OriginalWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeed = OriginalWalkSpeed * 0.5f;
 
-	// Verificar si el sniper está seleccionado para aplicar un zoom potente
 	if (sniperSelected)
 	{
-		cameraBoom->TargetArmLength = 20.0f; // Muy cerca para simular un zoom potente
-		camera->FieldOfView = 30.0f; // Reducir el FOV para un zoom X3 más fuerte
+		cameraBoom->TargetArmLength = 20.0f;
+		camera->FieldOfView = 30.0f;
 
-		// Mostrar la mira del sniper
 		if (SniperScopeWidgetClass && !SniperScopeWidget)
 		{
 			SniperScopeWidget = CreateWidget<UUserWidget>(GetWorld(), SniperScopeWidgetClass);
 			if (SniperScopeWidget)
-			{
 				SniperScopeWidget->AddToViewport();
-			}
 		}
 
-		// Ocultar el crosshair estándar mientras se usa la mira del sniper
 		if (CrosshairWidget)
-		{
 			CrosshairWidget->RemoveFromViewport();
-		}
 	}
 	else
-	{
-		// Usar un zoom leve para otras armas
 		cameraBoom->TargetArmLength = 200.0f;
-	}
 
-	// Hacer que el personaje rote con la cámara en modo de apuntado
+
 	bUseControllerRotationYaw = true;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 }
@@ -341,24 +383,67 @@ void AFarmer::StopAiming()
 
 	GetCharacterMovement()->MaxWalkSpeed = OriginalWalkSpeed;
 
-	// Restaurar la longitud del brazo de la cámara
 	cameraBoom->TargetArmLength = 300.0f;
-	camera->FieldOfView = 90.0f; // Restaurar el FOV original
+	camera->FieldOfView = 90.0f;
 
-	// Si la mira del sniper está activa, quitarla de la vista
 	if (SniperScopeWidget)
 	{
 		SniperScopeWidget->RemoveFromViewport();
 		SniperScopeWidget = nullptr;
 	}
 
-	// Restaurar el crosshair estándar si existe
 	if (CrosshairWidget && !CrosshairWidget->IsInViewport())
-	{
 		CrosshairWidget->AddToViewport();
-	}
 
-	// Restaurar la rotación del personaje en modo normal
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 }
+
+void AFarmer::Sprint()
+{
+	if (stamina > 0)
+	{
+		isSprinting = true;
+		GetCharacterMovement()->MaxWalkSpeed = sprintSpeed;
+	}
+}
+
+void AFarmer::Walk()
+{
+	isSprinting = false;
+	GetCharacterMovement()->MaxWalkSpeed = normalSpeed;
+}
+
+
+void AFarmer::Slide()
+{
+	if (isSprinting && !isSliding)
+	{
+		isSliding = true;
+		GetCharacterMovement()->MaxWalkSpeed = slideSpeed;
+		GetWorld()->GetTimerManager().SetTimer(SlideTimerHandle, this, &AFarmer::StopSlide, 1.0f, false);
+	}
+}
+
+void AFarmer::StopSlide()
+{
+	isSliding = false;
+	Walk();
+}
+
+void AFarmer::SReload()
+{
+	if (reloadSound)
+		UGameplayStatics::PlaySoundAtLocation(this, reloadSound, GetActorLocation());
+	
+	SCanShoot = true;
+}
+
+void AFarmer::QReload()
+{
+	if (fastreloadSound)
+		UGameplayStatics::PlaySoundAtLocation(this, fastreloadSound, GetActorLocation());
+
+	ammo = 12;
+}
+

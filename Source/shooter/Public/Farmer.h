@@ -9,6 +9,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/kismetSystemLibrary.h"
 #include "Blueprint/UserWidget.h"
@@ -39,6 +40,15 @@ public:
 	int life;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
+	int maxLife;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
+	int ammo;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
+	float stamina;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
 	int grandes;
 
 	UPROPERTY(EditAnywhere, Category = "PlayerUI")
@@ -54,12 +64,32 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UUserWidget> SniperScopeWidgetClass;
 
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* sniperSound;
+
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* quickFireSound;
+
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* reloadSound;
+
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* fastreloadSound;
+
 	UUserWidget* SniperScopeWidget;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerStats")
 	bool bIsAiming;
 
 	float OriginalWalkSpeed;
+
+	float maxStamina;
+
+	float normalSpeed;
+	float sprintSpeed;
+	float slideSpeed;
+
+	FTimerHandle SlideTimerHandle;
 
 	void MoveRight(float Axis);
 	void MoveFoward(float Axis);
@@ -106,8 +136,20 @@ public:
 	bool hasKnife;
 
 	bool sniperSelected;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
 	bool gunSelected;
+
 	bool knifeSelected;
+
+	bool isSprinting;
+	bool isSliding;
+
+	bool SCanShoot;
+
+	FTimerHandle TimerHandle_ShootCooldown;
+
+	FTimerHandle TimerHandle_RayCooldown;
 
 	void ShootBullet();
 
@@ -121,4 +163,15 @@ public:
 
 	void StopAiming();
 
+	void Sprint();
+
+	void Walk();
+
+	void Slide();
+
+	void StopSlide();
+
+	void SReload();
+
+	void QReload();
 };
