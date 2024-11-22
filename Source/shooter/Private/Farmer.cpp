@@ -177,6 +177,13 @@ void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimi
 		GetWorld()->GetTimerManager().SetTimer(Ouch_Time, this, &AFarmer::Damaged, 0.5f, false);
 		GetWorld()->GetTimerManager().SetTimer(Vencible_Time, this, &AFarmer::Vencible, 1.5f, false);
 	}
+
+	if (other->ActorHasTag("Victory"))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Green, "You Win");
+		GetWorld()->GetTimerManager().SetTimer(Reset_Time, this, &AFarmer::HandleDeath, 2.0f, false);
+	}
+
 	
 	if (other->ActorHasTag("rapid_fire_gun") && !hasGun)
 	{
@@ -525,7 +532,7 @@ void AFarmer::HandleDeath()
     if (World)
     {
         FString CurrentLevelName = World->GetMapName();
-        CurrentLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // Limpia el nombre del nivel de prefijos no deseados.
+        CurrentLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
         UGameplayStatics::OpenLevel(World, FName(*CurrentLevelName), false);
     }
 }

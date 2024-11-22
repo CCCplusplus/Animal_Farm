@@ -168,6 +168,8 @@ public:
 
 	FTimerHandle Ouch_Time;
 
+	FTimerHandle Reset_Time;
+
 	void ShootBullet();
 
 	void ShootRayTrace();
