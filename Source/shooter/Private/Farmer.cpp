@@ -57,14 +57,22 @@ AFarmer::AFarmer()
 
 	bIsAiming = false;
 
+	invencible = false;
+
 	isSprinting = false;
 	isSliding = false;
 
 	SCanShoot = false;
+
+	shouldDie = false;
+
+	damaged = false;
 }
 
 void AFarmer::MoveRight(float Axis)
 {
+	if (shouldDie) return;
+
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
@@ -73,6 +81,8 @@ void AFarmer::MoveRight(float Axis)
 
 void AFarmer::MoveFoward(float Axis)
 {
+	if (shouldDie) return;
+
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0, Rotation.Yaw, 0);
 	const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
@@ -81,6 +91,8 @@ void AFarmer::MoveFoward(float Axis)
 
 void AFarmer::CycleWeapons()
 {
+	if (shouldDie) return;
+
 	int availableWeapons = (hasSniper ? 1 : 0) + (hasGun ? 1 : 0) + (hasKnife ? 1 : 0);
 
 	if (availableWeapons <= 1) return;
@@ -127,6 +139,8 @@ void AFarmer::CycleWeapons()
 
 void AFarmer::HandleMouseWheel(float AxisValue)
 {
+	if (shouldDie) return;
+
 	if (AxisValue != 0.0f)
 		CycleWeapons();
 }
@@ -135,12 +149,33 @@ void AFarmer::HandleMouseWheel(float AxisValue)
 void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimitiveComponent* otherComp, int32 otherIndex, bool bFromsweep, const FHitResult& resutl)
 {
 	if (other->ActorHasTag("obj")) {
-		if (life < maxLife) 
+		if (life <= maxLife) 
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "GetObj");
 			life += 25;
 			other->Destroy();
 		}
+	}
+
+	if (other->ActorHasTag("Enemy") && !invencible) 
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "Attacked");
+		ADog* HitDog = Cast<ADog>(other);
+		ACow* HitCow = Cast<ACow>(other);
+		APig* HitPig = Cast<APig>(other);
+
+		if (HitDog != nullptr)
+			life -= HitDog->Attack;
+
+		if (HitCow != nullptr)
+			life -= HitCow->Attack;
+
+		if (HitPig != nullptr)
+			life -= HitPig->Attack;
+
+		invencible = true;
+		damaged = true;
+		GetWorld()->GetTimerManager().SetTimer(Ouch_Time, this, &AFarmer::Damaged, 0.5f, false);
+		GetWorld()->GetTimerManager().SetTimer(Vencible_Time, this, &AFarmer::Vencible, 1.5f, false);
 	}
 	
 	if (other->ActorHasTag("rapid_fire_gun") && !hasGun)
@@ -228,6 +263,12 @@ void AFarmer::Tick(float DeltaTime)
 
 	if (life > maxLife)
 		life = maxLife;
+	
+	if (life <= 0 && !shouldDie)
+	{
+		shouldDie = true;
+		GetWorld()->GetTimerManager().SetTimer(DeathAnimationWait, this, &AFarmer::HandleDeath, 4.0f, false);
+	}
 }
 
 // Called to bind functionality to input
@@ -262,6 +303,8 @@ void AFarmer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AFarmer::ShootBullet()
 {
+	if (shouldDie) return;
+
 	if (!SCanShoot || !hasSniper) return;
 
 	if (sniperSound)
@@ -284,6 +327,8 @@ void AFarmer::ShootBullet()
 
 void AFarmer::ShootRayTrace()
 {
+	if (shouldDie) return;
+
 	if (!hasGun || ammo <= 0) return;
 
 	if(quickFireSound)
@@ -309,6 +354,21 @@ void AFarmer::ShootRayTrace()
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
 
+	if (bHit && HitResult.GetActor() != nullptr)
+	{
+		ADog* HitDog = Cast<ADog>(HitResult.GetActor());
+		ACow* HitCow = Cast<ACow>(HitResult.GetActor());
+		APig* HitPig = Cast<APig>(HitResult.GetActor());
+
+		if (HitDog != nullptr)
+			HitDog->TakeDamage(20);
+
+		if (HitCow != nullptr)
+			HitCow->TakeDamage(20);
+
+		if (HitPig != nullptr)
+			HitPig->TakeDamage(20);
+	}
 
 	FColor LineColor = bHit ? FColor::Green : FColor::Red;
 
@@ -323,6 +383,8 @@ void AFarmer::ShootRayTrace()
 
 void AFarmer::ThrowGranade()
 {
+	if (shouldDie) return;
+
 	if (grandes < 1) return;
 
 	if (grandeClone)
@@ -339,6 +401,8 @@ void AFarmer::ThrowGranade()
 
 void AFarmer::FireWeapon()
 {
+	if (shouldDie) return;
+
 	if (sniperSelected && hasSniper)
 		ShootBullet();
 	else if (gunSelected && hasGun)
@@ -349,6 +413,8 @@ void AFarmer::FireWeapon()
 
 void AFarmer::StartAiming()
 {
+	if (shouldDie) return;
+
 	bIsAiming = true;
 
 	OriginalWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
@@ -401,6 +467,8 @@ void AFarmer::StopAiming()
 
 void AFarmer::Sprint()
 {
+	if (shouldDie) return;
+
 	if (stamina > 0)
 	{
 		isSprinting = true;
@@ -417,6 +485,8 @@ void AFarmer::Walk()
 
 void AFarmer::Slide()
 {
+	if (shouldDie) return;
+
 	if (isSprinting && !isSliding)
 	{
 		isSliding = true;
@@ -445,5 +515,28 @@ void AFarmer::QReload()
 		UGameplayStatics::PlaySoundAtLocation(this, fastreloadSound, GetActorLocation());
 
 	ammo = 12;
+}
+
+void AFarmer::HandleDeath()
+{
+	this->Destroy();
+
+	UWorld* World = GetWorld();
+    if (World)
+    {
+        FString CurrentLevelName = World->GetMapName();
+        CurrentLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // Limpia el nombre del nivel de prefijos no deseados.
+        UGameplayStatics::OpenLevel(World, FName(*CurrentLevelName), false);
+    }
+}
+
+void AFarmer::Vencible()
+{
+	invencible = false;
+}
+
+void AFarmer::Damaged()
+{
+	damaged = false;
 }
 

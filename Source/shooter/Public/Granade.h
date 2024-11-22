@@ -13,8 +13,14 @@ UCLASS()
 class SHOOTER_API AGranade : public AProjectile
 {
 	GENERATED_BODY()
+
+public:
 	
 	AGranade();
 
 	void OnHit(const FHitResult& hi) override;
+
+protected:
+
+	virtual void BeginPlay() override;
 };

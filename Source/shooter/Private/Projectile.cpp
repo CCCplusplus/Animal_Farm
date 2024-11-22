@@ -2,6 +2,9 @@
 
 
 #include "Projectile.h"
+#include "Dog.h"
+#include "Cow.h"
+#include "Pig.h"
 
 // Sets default values
 AProjectile::AProjectile()
@@ -22,6 +25,22 @@ AProjectile::AProjectile()
 
 void AProjectile::OnHit(const FHitResult& hi)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Hit something"));
+	if (hi.GetActor() != nullptr)
+	{
+		ADog* HitDog = Cast<ADog>(hi.GetActor());
+		ACow* HitCow = Cast<ACow>(hi.GetActor());
+		APig* HitPig = Cast<APig>(hi.GetActor());
+
+		if (HitDog != nullptr)
+			HitDog->TakeDamage(40);
+
+		if (HitCow != nullptr)
+			HitCow->TakeDamage(40);
+
+		if (HitPig != nullptr)
+			HitPig->TakeDamage(40);
+	}
 	this->Destroy();
 }
 

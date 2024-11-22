@@ -14,6 +14,9 @@
 #include "Kismet/kismetSystemLibrary.h"
 #include "Blueprint/UserWidget.h"
 #include "Projectile.h"
+#include "Dog.h"
+#include "Cow.h"
+#include "Pig.h"
 #include  "kismet/GameplayStatics.h"
 
 #include "Farmer.generated.h"
@@ -81,6 +84,12 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerStats")
 	bool bIsAiming;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
+	bool shouldDie;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
+	bool damaged;
+
 	float OriginalWalkSpeed;
 
 	float maxStamina;
@@ -147,9 +156,17 @@ public:
 
 	bool SCanShoot;
 
+	bool invencible;
+
 	FTimerHandle TimerHandle_ShootCooldown;
 
 	FTimerHandle TimerHandle_RayCooldown;
+
+	FTimerHandle DeathAnimationWait;
+
+	FTimerHandle Vencible_Time;
+
+	FTimerHandle Ouch_Time;
 
 	void ShootBullet();
 
@@ -174,4 +191,10 @@ public:
 	void SReload();
 
 	void QReload();
+
+	void HandleDeath();
+
+	void Vencible();
+
+	void Damaged();
 };
