@@ -78,10 +78,17 @@ void AGranade::OnHit(const FHitResult& Hit)
     {
         ExplosionEffect->SetWorldLocation(ExplosionCenter + (ExplosionCenter.YAxisVector + 20));
         ExplosionEffect->ActivateSystem();
+        if (explosion)
+            UGameplayStatics::PlaySoundAtLocation(this, explosion, GetActorLocation());
     }
     else
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Failed 2"));
 
+    GetWorld()->GetTimerManager().SetTimer(boom, this, &AGranade::Explode, 2.0f, false);
+}
+
+void AGranade::Explode()
+{
     this->Destroy();
 }
 

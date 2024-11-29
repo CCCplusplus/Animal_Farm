@@ -19,8 +19,15 @@ public:
 
 	void OnHit(const FHitResult& hi) override;
 
+	void Explode();
+
 	UPROPERTY(VisibleAnywhere, Category = "Combat")
 	UNiagaraComponent* ExplosionEffect;
+
+	UPROPERTY(EditAnywhere, Category = "Audio")
+	USoundBase* explosion;
+
+	FTimerHandle boom;
 
 protected:
 

@@ -168,6 +168,12 @@ void AFarmer::OnBeingOverLap(UPrimitiveComponent* hitComp, AActor* other, UPrimi
 		}
 	}
 
+	if (other->ActorHasTag("Granade"))
+	{
+		grandes++;
+		other->Destroy();
+	}
+
 	if (other->ActorHasTag("Enemy") && !invencible) 
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 20, FColor::Yellow, "Attacked");
