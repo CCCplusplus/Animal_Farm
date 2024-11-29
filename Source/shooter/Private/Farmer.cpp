@@ -324,6 +324,8 @@ void AFarmer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AFarmer::Walk);
 
 	PlayerInputComponent->BindAction("Slide", IE_Pressed, this, &AFarmer::Slide);
+
+	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &AFarmer::TogglePause);
 }
 
 void AFarmer::ShootBullet()
@@ -573,3 +575,30 @@ void AFarmer::Damaged()
 {
 	damaged = false;
 }
+
+void AFarmer::TogglePause()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		bIsGamePaused = !bIsGamePaused;
+		GetWorld()->GetWorldSettings()->SetTimeDilation(bIsGamePaused ? 0.0f : 1.0f);
+		PC->bShowMouseCursor = bIsGamePaused;
+
+		if (bIsGamePaused)
+		{
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetWidgetToFocus(nullptr); // Or set this to your pause menu widget
+			PC->SetInputMode(InputMode);
+		}
+		else
+		{
+			FInputModeGameOnly InputMode;
+			PC->SetInputMode(InputMode);
+		}
+
+		UE_LOG(LogTemp, Warning, TEXT("Game %s."), bIsGamePaused ? TEXT("paused") : TEXT("resumed"));
+	}
+}
+
