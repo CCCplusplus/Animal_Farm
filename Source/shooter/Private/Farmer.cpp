@@ -2,6 +2,7 @@
 
 
 #include "Farmer.h"
+#include "NiagaraSystem.h"
 
 // Sets default values
 AFarmer::AFarmer()
@@ -67,6 +68,17 @@ AFarmer::AFarmer()
 	shouldDie = false;
 
 	damaged = false;
+
+	GunTrailComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("GunTrailComponent"));
+	GunTrailComponent->SetupAttachment(RootComponent);
+	GunTrailComponent->SetAutoActivate(false);
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> GunTrailEffect(TEXT("/Game/Game/NS_GunTrail.NS_GunTrail"));
+	if (GunTrailEffect.Succeeded())
+		GunTrailComponent->SetAsset(GunTrailEffect.Object);
+	else
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, TEXT("Error Effect not Found."));
+	
 }
 
 void AFarmer::MoveRight(float Axis)
@@ -351,7 +363,7 @@ void AFarmer::ShootRayTrace()
 	FVector Start = camera->GetComponentLocation();
 	FVector ForwardVector = camera->GetForwardVector();
 
-	Start += ForwardVector * 50.0f;
+	Start += ForwardVector * 200.0f;
 
 	FVector End = Start + (ForwardVector * 10000.0f);
 
@@ -360,6 +372,15 @@ void AFarmer::ShootRayTrace()
 	Params.AddIgnoredActor(this);
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params);
+
+	if (GunTrailComponent)
+	{
+		GunTrailComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		GunTrailComponent->SetWorldLocation(Start);
+		GunTrailComponent->SetWorldRotation(ForwardVector.Rotation());
+		GunTrailComponent->ActivateSystem();
+	}
+
 
 	if (bHit && HitResult.GetActor() != nullptr)
 	{
@@ -377,7 +398,7 @@ void AFarmer::ShootRayTrace()
 			HitPig->TakeDamage(20);
 	}
 
-	FColor LineColor = bHit ? FColor::Green : FColor::Red;
+	/*FColor LineColor = bHit ? FColor::Green : FColor::Red;
 
 
 	DrawDebugLine(GetWorld(), Start, End, LineColor, false, 2.0f, 0, 1.0f);
@@ -385,7 +406,7 @@ void AFarmer::ShootRayTrace()
 	if (bHit)
 		DrawDebugSphere(GetWorld(), HitResult.Location, 10.0f, 12, FColor::Green, false, 2.0f);
 	else
-		DrawDebugSphere(GetWorld(), End, 10.0f, 12, FColor::Red, false, 2.0f);
+		DrawDebugSphere(GetWorld(), End, 10.0f, 12, FColor::Red, false, 2.0f);*/
 }
 
 void AFarmer::ThrowGranade()
@@ -546,4 +567,3 @@ void AFarmer::Damaged()
 {
 	damaged = false;
 }
-

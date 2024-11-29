@@ -17,7 +17,8 @@
 #include "Dog.h"
 #include "Cow.h"
 #include "Pig.h"
-#include  "kismet/GameplayStatics.h"
+#include "NiagaraComponent.h"
+#include "kismet/GameplayStatics.h"
 
 #include "Farmer.generated.h"
 
@@ -90,6 +91,10 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status")
 	bool damaged;
 
+	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	UNiagaraComponent* GunTrailComponent;
+
+
 	float OriginalWalkSpeed;
 
 	float maxStamina;
@@ -140,6 +145,7 @@ public:
 
 	bool hasSniper;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "PlayerStats")
 	bool hasGun;
 
 	bool hasKnife;

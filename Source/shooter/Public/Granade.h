@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Projectile.h"
+#include "NiagaraComponent.h"
 #include "Granade.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class SHOOTER_API AGranade : public AProjectile
 {
@@ -19,6 +18,9 @@ public:
 	AGranade();
 
 	void OnHit(const FHitResult& hi) override;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat")
+	UNiagaraComponent* ExplosionEffect;
 
 protected:
 
